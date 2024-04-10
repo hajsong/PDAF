@@ -1,0 +1,17 @@
+# ignore ALL files from compilation
+*.o
+*.mod
+*.f90
+
+# ignore ALL files in ANY directory named temp
+models/
+tutorial/
+
+tutorial_global_oce_latlon_v2/build
+tutorial_global_oce_latlon_v2/build_pdaf
+tutorial_global_oce_latlon_v2/build_pdaf_etan
+
+# ignore model output files
+*.data
+*.meta
+
