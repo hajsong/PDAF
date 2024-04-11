@@ -14,4 +14,3 @@ tutorial_global_oce_latlon_v2/build_pdaf_etan
 # ignore model output files
 *.data
 *.meta
-
