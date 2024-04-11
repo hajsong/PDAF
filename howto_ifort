@@ -1,0 +1,67 @@
+[ Before starting... ]
++ use v1.16_ifort
++ use (openmpi dumps out the errors.)
+module load intel19/compiler-19 
+module load intel19/openmpi-3.1.6
+module load intel19/netcdf-4.6.1
+export NETCDF_ROOT="/usr/local/netcdf/461_intel19/"
+export MPI_INC_DIR="/usr/local/mpi/intel19/openmpi-3.1.6/include/"
+
++ copy make.arch/linux_ifort.h to make.arch/linux_ifort_openmpi.h
++ in make.arch/linux_ifort_openmpi.h:
+ - line 16: FC = mpif90
+ - line 41: -openmp -> -qopenmp
+ - line 52: MPI_INC = -I/usr/local/mpi/intel19/openmpi-3.1.6/include
+ - line 58 and 59:
+    NC_LIB   = -L/usr/local/netcdf/4.6.1_intel19/lib -lnetcdff
+    NC_INC   = -I/usr/local/netcdf/4.6.1_intel19/include
+
+[ compiling ]
+
++ cd /home/hajsong/PDAF/PDAF_V2.0/src
++ make PDAF_ARCH=linux_ifort_openmpi
++ If successful, you can see "~/PDAF/PDAF_V2.0/lib/libpdaf-d.a"
+
+[for tutorial "offline_2D_serial"]
++ in tutorial/offline_2D_serial: make PDAF_ARCH=linux_ifort_openmpi
+
+[for tutorial "online_2D_serialmodel"]
++ in tutorial/online_2D_serialmodel: make model_pdaf PDAF_ARCH=linux_ifort_openmpi
+
+[for Lorenz-96 model]
+1. run the forward model
++ line 31 in make.arch/linux_ifort_openmpi.h: CPP_DEFS = #-DUSE_PDAF
++ cd models/lorenz96
++ make lorenz_96 PDAF_ARCH=linux_ifort_openmpi
++ ./lorenz_96 -total_steps 10000
+
+2. sample observations
++ cd tools
++ make all PDAF_ARCH=linux_ifort_openmpi
++ ./generate_obs
++ ./generate_covar
+
+3. Perform data assimilation
++ line 31 in make.arch/linux_ifort_openmpi.h: CPP_DEFS = -DUSE_PDAF
++ make clean PDAF_ARCH=linux_ifort_openmpi
++ make pdaf_lorenz_96 PDAF_ARCH=linux_ifort_openmpi
++ ./tools/runasml.sh
+
+[for tutorial_barotropic_gyre]
+refer to "/PDAF/PDAF-D_V1.15/modelbindings/MITgcm/README".
+1. Compiling the model binding example for serial MITgcm without domain decomposition
++ cd /home/hajsong/PDAF/tutorial_barotropic_gyre
++ cp -r code code_pdaf
++ cp /home/hajsong/PDAF/PDAF-D_V1.15/modelbindings/MITgcm/MITgcm-PDAF_binding/* code_pdaf
++ edit OPTFILE: cp /home/hajsong/MITgcm/tools/build_options/linux_amd64_ifort_acc linux_amd64_ifort_pdaf
+ - line 23: DEFINES='-DWORDLENGTH=4 -DUSE_PDAF'
+ - add : 
+   PDAF="/home/hajsong/PDAF/PDAF-D_V1.15"
+   MKLLIB="-Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_gf_lp64.a ${MKLROOT}/lib/intel64/libmkl_sequential.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lpthread -lm -ldl"
+ - line 74-76:
+   INCLUDEDIRS="${NETCDF_ROOT}/include"
+   INCLUDES="-I${NETCDF_ROOT}/include -I/usr/local/intel18/compilers_and_libraries_2018.3.222/linux/mkl/include"
+   LIBS="-L${NETCDF_ROOT}/lib64 -L${NETCDF_ROOT}/lib -L${PDAF}/lib -lpdaf-d ${MKLLIB}"
++ mkdir build_pdaf
++ cd build_pdaf
+
